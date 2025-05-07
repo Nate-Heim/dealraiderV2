@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DealRaiderV2 - Game Price Checker</title>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+    <!-- Linked external CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>DealRaiderV2 - Game Price Checker</h1>
+
+    <!-- Search Form -->
+    <form 
+        hx-get="https://search-pibd3c5hcq-uc.a.run.app" 
+        hx-target="#results" 
+        hx-trigger="submit"
+    >
+        <input type="text" name="game" placeholder="Search for a game..." required />
+        <button type="submit">Search</button>
+    </form>
+
+    <div class="main-content">
+        <!-- Results Section -->
+        <div class="search-results">
+            <h2>Search Results</h2>
+            <div id="results">
+                <p>Search for a game above to see results.</p>
+            </div>
+        </div>
+
+        <!-- Sidebar Wishlist Section -->
+        <aside class="wishlist-sidebar">
+            <h2>Your Wishlist</h2>
+            <div 
+                hx-get="https://getwishlist-pibd3c5hcq-uc.a.run.app" 
+                hx-trigger="load, refreshWishlist from:body" 
+                id="wishlist"
+            >
+                <p>Loading wishlist...</p>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>
