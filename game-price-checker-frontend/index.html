@@ -8,21 +8,32 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
 
-    <!-- Linked external CSS -->
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <!-- Linked CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <h1>DealRaiderV2 - Game Price Checker</h1>
 
-    <!-- Search Form -->
-    <form 
-        hx-get="https://search-pibd3c5hcq-uc.a.run.app" 
-        hx-target="#results" 
-        hx-trigger="submit"
-    >
-        <input type="text" name="game" placeholder="Search for a game..." required />
-        <button type="submit">Search</button>
-    </form>
+    <!-- Auth Buttons -->
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <button id="loginBtn">Login with Google</button>
+        <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
+
+    <!-- Search Section -->
+    <div style="display: flex; justify-content: center; margin-bottom: 2rem;">
+        <input type="text" name="game" placeholder="Search for a game..." id="searchInput" required style="padding: 0.5rem; font-size: 1rem; width: 70%; margin-right: 0.5rem;">
+        <button 
+            hx-get="https://app-pibd3c5hcq-uc.a.run.app/search"
+            hx-include="#searchInput"
+            hx-target="#results"
+            style="padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; transition: background-color 0.3s ease;"
+        >Search</button>
+    </div>
 
     <div class="main-content">
         <!-- Results Section -->
@@ -37,13 +48,68 @@
         <aside class="wishlist-sidebar">
             <h2>Your Wishlist</h2>
             <div 
-                hx-get="https://getwishlist-pibd3c5hcq-uc.a.run.app" 
-                hx-trigger="load, refreshWishlist from:body" 
-                id="wishlist"
-            >
-                <p>Loading wishlist...</p>
+                id="wishlist">
+                <p>Please log in to view your wishlist.</p>
             </div>
         </aside>
     </div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfwdlJS0agi7VD9nmB3F8AVJnS4xgmJXU",
+            authDomain: "dealraiderv2.firebaseapp.com",
+            projectId: "dealraiderv2",
+            storageBucket: "dealraiderv2.appspot.com",
+            messagingSenderId: "146122590772",
+            appId: "1:146122590772:web:7729313e952e9f96879861"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Auth buttons
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        loginBtn.onclick = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+        };
+        logoutBtn.onclick = () => {
+            auth.signOut();
+        };
+
+        // Set Authorization header for HTMX requests + control wishlist
+        auth.onAuthStateChanged(user => {
+            const wishlistDiv = htmx.find('#wishlist');
+
+            if (user) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+
+                // Set up wishlist fetching after login
+                wishlistDiv.setAttribute('hx-get', 'https://app-pibd3c5hcq-uc.a.run.app/getWishlist');
+                wishlistDiv.setAttribute('hx-trigger', 'refreshWishlist from:body');
+
+                // Immediately fetch wishlist after login
+                htmx.trigger(wishlistDiv, 'refreshWishlist');
+
+                // Attach Authorization token to every HTMX request
+                document.addEventListener("htmx:configRequest", (event) => {
+                    user.getIdToken().then((token) => {
+                        event.detail.headers['Authorization'] = `Bearer ${token}`;
+                    });
+                });
+
+            } else {
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+
+                // Clean up: remove hx-get so it doesn't try to fetch
+                wishlistDiv.removeAttribute('hx-get');
+                wishlistDiv.innerHTML = '<p>Please log in to view your wishlist.</p>';
+            }
+        });
+    </script>
 </body>
 </html>
